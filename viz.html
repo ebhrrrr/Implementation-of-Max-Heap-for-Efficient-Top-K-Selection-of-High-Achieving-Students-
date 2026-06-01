@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Heap Visualizer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #ffffff;
+      font-family: 'Courier Prime', monospace;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .page-header {
+      border: 3px solid #ffb2dc;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      background: #ff88ce;
+      color: #000000;
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .page-header h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem;
+      letter-spacing: 2px;
+    }
+
+    .page-header span {
+      font-size: 0.8rem;
+      opacity: 0.6;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .file-status {
+      background: #ffffff;
+      padding: 6px 12px;
+      border-radius: 0px;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-led {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #2ecc71;
+      box-shadow: 0 0 3px #2ecc71;
+    }
+
+    .controls-bar {
+      border: 2px solid #ff88ce;
+      padding: 14px 18px;
+      margin-bottom: 24px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .controls-bar label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .controls-bar input[type=number] {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.1rem;
+      border: 2px solid #ff88ce;
+      padding: 6px 10px;
+      width: 80px;
+      background: #f5f0e8;
+      outline: none;
+    }
+
+    .controls-bar input[type=number]:focus {
+      background: #ffe66d;
+    }
+
+    .btn-run {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      letter-spacing: 1.5px;
+      background: #ff88ce;
+      color: #000000;
+      border: 2px solid #ff88ce;
+      padding: 8px 22px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-run:hover {
+      background: #ffe66d;
+      color: #ff88ce;
+    }
+
+    .btn-file {
+      background: #2c3e50;
+      border-color: #ff88ce;
+    }
+
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      margin-bottom: 0;
+      border-bottom: 3px solid #ff88ce;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 9px 18px;
+      border: 2px solid #ff88ce;
+      border-bottom: none;
+      background: #d9d4ca;
+      cursor: pointer;
+      margin-right: -2px;
+      color: #555;
+      transition: background 0.1s;
+    }
+
+    .tab-btn.active {
+      background: #f5f0e8;
+      color: #ff88ce;
+      font-weight: 700;
+      position: relative;
+      z-index: 2;
+    }
+
+    .tab-btn:hover:not(.active) {
+      background: #e8e2d6;
+    }
+
+    .tab-panel {
+      display: none;
+      border: 2px solid #ff88ce;
+      border-top: none;
+      padding: 20px;
+      background: #f5f0e8;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* LOH */
+    .loh-layer {
+      margin-bottom: 10px;
+      border: 1.5px solid #ff88ce;
+      padding: 10px 14px;
+      background: #fff;
+      position: relative;
+    }
+
+    .loh-layer-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .layer-badge {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      background: #ff88ce;
+      color: #ffffff;
+      padding: 1px 8px;
+      letter-spacing: 1px;
+    }
+
+    .layer-meta {
+      font-size: 0.75rem;
+      color: #555;
+      font-family: 'DM Mono', monospace;
+    }
+
+    .layer-prune-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border: 1.5px solid;
+      margin-left: auto;
+    }
+
+    .layer-prune-badge.active {
+      border-color: #27ae60;
+      color: #27ae60;
+    }
+
+    .layer-prune-badge.pruned {
+      border-color: #e74c3c;
+      color: #e74c3c;
+    }
+
+    .layer-nodes {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 4px;
+    }
+
+    .node-box {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.72rem;
+      border: 1.5px solid #aaa;
+      padding: 4px 7px;
+      background: #f5f0e8;
+      cursor: default;
+      transition: all 0.1s;
+    }
+
+    .node-box:hover {
+      background: #ffe66d;
+      border-color: #ff88ce;
+    }
+
+    .node-box.highlight-top {
+      background: #ffe66d;
+      border-color: #ff88ce;
+      font-weight: 700;
+    }
+
+    .heap-section {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .heap-block {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .heap-block h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 1.5px;
+      border-bottom: 2px solid #ff88ce;
+      padding-bottom: 4px;
+      margin-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.78rem;
+    }
+
+    th {
+      background: #ff88ce;
+      color: #ffffff;
+      padding: 6px 10px;
+      text-align: left;
+    }
+
+    td {
+      padding: 5px 10px;
+      border-bottom: 1px solid #ccc;
+    }
+
+    tr.top-k td {
+      background: #ffe66d;
+      font-weight: 700;
+    }
+
+    .pyramid-section {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .pyramid-container {
+      flex: 1;
+      min-width: 280px;
+      max-width: 420px;
+    }
+
+    .pyramid-container h3 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.1rem;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .pyramid-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .pyramid-row {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .pyramid-node {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.68rem;
+      border: 1.5px solid #ff88ce;
+      padding: 5px 8px;
+      text-align: center;
+      min-width: 52px;
+    }
+
+    .pyr-max-root {
+      background: #ffe66d;
+      border-width: 2.5px;
+    }
+
+    .pyr-max-level1 {
+      background: #fff3b0;
+    }
+
+    .pyr-max-level2 {
+      background: #fff9e0;
+    }
+
+    .pyr-min-root {
+      background: #c8f0c8;
+      border-width: 2.5px;
+    }
+
+    .pyr-min-level1 {
+      background: #e0f7e0;
+    }
+
+    .pyr-min-level2 {
+      background: #f0faf0;
+    }
+
+    .arrow-row {
+      text-align: center;
+      font-size: 1.1rem;
+      color: #888;
+      margin: 1px 0;
+    }
+
+    .stats-strip {
+      display: flex;
+      gap: 0;
+      margin-bottom: 18px;
+      border: 2px solid #ff88ce;
+      overflow-x: auto;
+    }
+
+    .stat-cell {
+      flex: 1;
+      padding: 10px 14px;
+      border-right: 1px solid #ff88ce;
+      background: #fff;
+      min-width: 110px;
+    }
+
+    .stat-cell:last-child {
+      border-right: none;
+    }
+
+    .stat-label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      color: #888;
+    }
+
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      line-height: 1.1;
+    }
+
+    .topk-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .topk-card {
+      border: 2px solid #ff88ce;
+      padding: 10px 14px;
+      background: #fff;
+      min-width: 110px;
+      position: relative;
+    }
+
+    .topk-card .rank-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: #ccc;
+      position: absolute;
+      top: 6px;
+      right: 8px;
+    }
+
+    .topk-card.rank1 {
+      background: #ffe66d;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      border-left: 4px solid #ff88ce;
+      padding-left: 8px;
+    }
+
+    .threshold-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.75rem;
+      background: #ff88ce;
+      color: #ffffff;
+      display: inline-block;
+      padding: 3px 10px;
+      margin-bottom: 14px;
+    }
+
+    .file-upload-area {
+      border: 2px dashed #ff88ce;
+      padding: 12px 16px;
+      background: #fff7e8;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    .file-label {
+      background: #ff88ce;
+      color: #ffffff;
+      padding: 5px 12px;
+      cursor: pointer;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .refresh-icon {
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    @media (max-width: 700px) {
+      body { padding: 12px; }
+      .tab-btn { padding: 6px 12px; font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div>
+    <h1>Student Heap Visualizer</h1>
+    <span>// Layer Ordered Heap + Max/Min Heap </span>
+  </div>
+  <div class="file-status" id="fileStatusBadge">
+    <div class="status-led" id="statusLed"></div>
+    <span id="statusText">Waiting for CSV</span>
+  </div>
+</div>
+
+<!-- CSV file loader -->
+<div class="file-upload-area">
+  <label class="file-label" for="csvUpload">SELECT Student_Database.csv</label>
+  <input type="file" id="csvUpload" accept=".csv">
+  <span style="color:#666;">Pick your CSV file (any changes will auto-update the visualizer)</span>
+  <span id="fileNameDisplay" style="font-weight:bold;"></span>
+</div>
+
+<div class="controls-bar">
+  <label for="kInput">TOP-K :</label>
+  <input type="number" id="kInput" value="5" min="1" max="100">
+  <button class="btn-run" id="refreshBtn">⟳ UPDATE VISUALIZATION</button>
+  <span style="font-size:0.7rem; color:#888;"></span>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="overview">Overview</button>
+  <button class="tab-btn" data-tab="loh">Layer Ordered Heap</button>
+  <button class="tab-btn" data-tab="heaps">Max / Min Heap</button>
+  <button class="tab-btn" data-tab="pyramid">Pyramid Demo</button>
+  <button class="tab-btn" data-tab="pruning">Pruning</button>
+</div>
+
+<div id="overview" class="tab-panel active"></div>
+<div id="loh" class="tab-panel"></div>
+<div id="heaps" class="tab-panel"></div>
+<div id="pyramid" class="tab-panel"></div>
+<div id="pruning" class="tab-panel"></div>
+
+<script>
+  // ---------- GLOBALS ----------
+  let currentStudents = [];     // array of student objects { NIM, Nama, Nilai_Ujian, Nilai_Project, Total }
+  let currentSortedDesc = [];
+  let currentSortedAsc = [];
+  let currentLayers = [];
+
+  // Tab switching logic
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.getAttribute('data-tab');
+      document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      btn.classList.add('active');
+    });
+  });
+
+  // Helper: Parse CSV text into student objects
+  function parseCSVToStudents(csvText) {
+    const lines = csvText.trim().split(/\r?\n/);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.trim());
+    // expected: NIM,Nama,Nilai_Ujian,Nilai_Project,Total (Total can be ignored, we recalc)
+    const students = [];
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (line === "") continue;
+      const values = line.split(',').map(v => v.trim());
+      if (values.length < 4) continue;
+      // try to map by index or by header index
+      let nim = "", nama = "", ujian = 0, project = 0;
+      if (headers.includes("NIM") && headers.includes("Nama") && headers.includes("Nilai_Ujian") && headers.includes("Nilai_Project")) {
+        const idxNIM = headers.indexOf("NIM");
+        const idxNama = headers.indexOf("Nama");
+        const idxUjian = headers.indexOf("Nilai_Ujian");
+        const idxProject = headers.indexOf("Nilai_Project");
+        nim = values[idxNIM] || "";
+        nama = values[idxNama] || "";
+        ujian = parseFloat(values[idxUjian]) || 0;
+        project = parseFloat(values[idxProject]) || 0;
+      } else {
+        // fallback positional: NIM,Nama,Nilai_Ujian,Nilai_Project
+        nim = values[0] || "";
+        nama = values[1] || "";
+        ujian = parseFloat(values[2]) || 0;
+        project = parseFloat(values[3]) || 0;
+      }
+      if (nim && nama) {
+        const total = ujian + project;
+        students.push({
+          NIM: nim,
+          Nama: nama,
+          Nilai_Ujian: ujian,
+          Nilai_Project: project,
+          Total: total
+        });
+      }
+    }
+    return students;
+  }
+
+  // Build LOH layers from sorted desc array
+  function buildLayers(sortedArr) {
+    const layers = [];
+    let size = 1;
+    let idx = 0;
+    while (idx < sortedArr.length) {
+      const layerData = sortedArr.slice(idx, idx + size);
+      if (layerData.length) layers.push(layerData);
+      idx += size;
+      size *= 2;
+    }
+    return layers;
+  }
+
+  // recompute everything based on currentStudents
+  function recomputeData() {
+    if (!currentStudents.length) {
+      currentSortedDesc = [];
+      currentSortedAsc = [];
+      currentLayers = [];
+      return;
+    }
+    currentSortedDesc = [...currentStudents].sort((a,b) => b.Total - a.Total);
+    currentSortedAsc = [...currentStudents].sort((a,b) => a.Total - b.Total);
+    currentLayers = buildLayers(currentSortedDesc);
+  }
+
+  // ========== RENDER FUNCTIONS (all use current data + k) ==========
+  function renderOverview(k) {
+    const container = document.getElementById('overview');
+    if (!currentStudents.length) {
+      container.innerHTML = `<div class="stats-strip" style="background:#f0e0d0;padding:20px;">⚠️ No data loaded. Please select a valid CSV file (Student_Database.csv format).</div>`;
+      return;
+    }
+    const topK = currentSortedDesc.slice(0, k);
+    const botK = currentSortedAsc.slice(0, k);
+    const threshold = topK.length ? topK[topK.length-1].Total : 0;
+    const maxScore = currentSortedDesc[0]?.Total || 0;
+    const minScore = currentSortedAsc[0]?.Total || 0;
+    
+    const statsHtml = `
+      <div class="stats-strip">
+        <div class="stat-cell"><div class="stat-label">Total Students</div><div class="stat-value">${currentStudents.length}</div></div>
+        <div class="stat-cell"><div class="stat-label">Top-K</div><div class="stat-value">${k}</div></div>
+        <div class="stat-cell"><div class="stat-label">Threshold</div><div class="stat-value">${threshold}</div></div>
+        <div class="stat-cell"><div class="stat-label">Max Score</div><div class="stat-value">${maxScore}</div></div>
+        <div class="stat-cell"><div class="stat-label">Min Score</div><div class="stat-value">${minScore}</div></div>
+        <div class="stat-cell"><div class="stat-label">LOH Layers</div><div class="stat-value">${currentLayers.length}</div></div>
+      </div>
+    `;
+    const topkHtml = `<div class="section-title">🏆 TOP-${k} Students</div><div class="topk-list">` + 
+      topK.map((s,i) => `
+        <div class="topk-card ${i===0?'rank1':i===1?'rank2':i===2?'rank3':''}">
+          <span class="rank-num">#${i+1}</span>
+          <div class="tk-name">${escapeHtml(s.Nama)}</div>
+          <div class="tk-score">${s.NIM} · Total: ${s.Total}</div>
+          <div class="tk-score">${s.Nilai_Ujian}  |  ${s.Nilai_Project}</div>
+        </div>
+      `).join('') + `</div>`;
+    
+    const bottomHtml = `<div class="section-title">📉 BOTTOM-${k} Students</div><div class="topk-list">` +
+      botK.map((s,i) => `
+        <div class="topk-card">
+          <span class="rank-num">#${i+1}</span>
+          <div class="tk-name">${escapeHtml(s.Nama)}</div>
+          <div class="tk-score">${s.NIM} · Total: ${s.Total}</div>
+          <div class="tk-score">${s.Nilai_Ujian}  |  ${s.Nilai_Project}</div>
+        </div>
+      `).join('') + `</div>`;
+    
+    container.innerHTML = statsHtml + topkHtml + bottomHtml;
+  }
+
+  function renderLOH(k) {
+    const container = document.getElementById('loh');
+    if (!currentStudents.length) { container.innerHTML = `<div class="empty-note">No CSV data loaded.</div>`; return; }
+    const topKSet = new Set(currentSortedDesc.slice(0, k).map(s => s.NIM));
+    const threshold = currentSortedDesc.slice(0, k)[k-1]?.Total || 0;
+    
+    let html = `<div class="section-title"> Layer Ordered Heap (geometric growth: 1,2,4,8...)</div>`;
+    currentLayers.forEach((layer, idx) => {
+      const maxV = Math.max(...layer.map(s=>s.Total));
+      const minV = Math.min(...layer.map(s=>s.Total));
+      const isActive = maxV >= threshold;
+      const nodesHtml = layer.map(s => `
+        <div class="node-box ${topKSet.has(s.NIM) ? 'highlight-top' : ''}">
+          <span class="node-name">${escapeHtml(s.Nama)}</span>
+          <span class="node-total">${s.Total}</span>
+        </div>
+      `).join('');
+      html += `
+        <div class="loh-layer">
+          <div class="loh-layer-header">
+            <span class="layer-badge">Layer ${idx+1}</span>
+            <span class="layer-meta">n=${layer.length} | MAX=${maxV} | MIN=${minV}</span>
+            <span class="layer-prune-badge ${isActive?'active':'pruned'}">${isActive?'ACTIVE':'PRUNED'}</span>
+          </div>
+          <div class="layer-nodes">${nodesHtml}</div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
+  }
+
+  function renderHeaps(k) {
+    const container = document.getElementById('heaps');
+    if (!currentStudents.length) { container.innerHTML = `<div class="empty-note">No data.</div>`; return; }
+    function makeTable(arr, limit, isMaxTitle) {
+      const rows = arr.slice(0, 100).map((s,i) => `
+        <tr class="${i < limit ? 'top-k' : ''}">
+          <td>${i+1}</td>
+          <td>${escapeHtml(s.Nama)}</td>
+          <td>${s.NIM}</td>
+          <td>${s.Total}</td>
+        </tr>
+      `).join('');
+      return `<table><thead><tr><th>#</th><th>Nama</th><th>NIM</th><th>Total</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+    const maxHtml = `<div class="heap-block"><h3>▲ MAX HEAP (descending)</h3>${makeTable(currentSortedDesc, k)}</div>`;
+    const minHtml = `<div class="heap-block"><h3>▼ MIN HEAP (ascending)</h3>${makeTable(currentSortedAsc, k)}</div>`;
+    container.innerHTML = `<div class="heap-section">${maxHtml}${minHtml}</div>`;
+  }
+
+  function renderPyramid(k) {
+    const container = document.getElementById('pyramid');
+    if (!currentStudents.length) { container.innerHTML = `<div class="empty-note">No data to visualize.</div>`; return; }
+    const maxData = currentSortedDesc.slice(0, 15);
+    const minData = currentSortedAsc.slice(0, 15);
+    
+    function buildPyramid(data, prefix) {
+      let html = '';
+      let idx = 0;
+      let level = 0;
+      while (idx < data.length) {
+        const count = Math.pow(2, level);
+        const rowItems = data.slice(idx, idx+count);
+        const rowDivs = rowItems.map(s => `
+          <div class="pyramid-node ${prefix}-level${level <= 2 ? level : 'rest'}">
+            <span class="pn-name">${escapeHtml(s.Nama)}</span>
+            <span class="pn-score">${s.Total}</span>
+          </div>
+        `).join('');
+        html += `<div class="pyramid-row">${rowDivs}</div>`;
+        if (idx+count < data.length && level < 3) html += `<div class="arrow-row">▼</div>`;
+        idx += count;
+        level++;
+      }
+      return html;
+    }
+    const pyramidHtml = `
+      <div class="pyramid-section">
+        <div class="pyramid-container"><h3> MAX-HEAP PYRAMID</h3><div class="pyramid-wrapper">${buildPyramid(maxData, 'pyr-max')}</div><div class="pyramid-legend">Root = highest score</div></div>
+        <div class="pyramid-container"><h3> MIN-HEAP PYRAMID</h3><div class="pyramid-wrapper">${buildPyramid(minData, 'pyr-min')}</div><div class="pyramid-legend">Root = lowest score</div></div>
+      </div>
+    `;
+    container.innerHTML = pyramidHtml;
+  }
+
+  function renderPruning(k) {
+    const container = document.getElementById('pruning');
+    if (!currentStudents.length) { container.innerHTML = `<div class="empty-note">No CSV loaded.</div>`; return; }
+    const topList = currentSortedDesc.slice(0, k);
+    const threshold = topList.length ? topList[topList.length-1].Total : 0;
+    let pruneHtml = `<div class="threshold-note">✂️ PRUNING THRESHOLD for TOP-${k} = ${threshold}</div><div class="section-title">Layer Pruning Simulation (Layer Ordered Heap)</div>`;
+    currentLayers.forEach((layer, i) => {
+      const maxV = Math.max(...layer.map(s=>s.Total));
+      const isActive = maxV >= threshold;
+      pruneHtml += `
+        <div class="loh-layer" style="border-left:4px solid ${isActive?'#27ae60':'#e74c3c'}">
+          <div class="loh-layer-header">
+            <span class="layer-badge">Layer ${i+1}</span>
+            <span class="layer-meta">MAX = ${maxV}</span>
+            <span class="layer-prune-badge ${isActive?'active':'pruned'}">${isActive?'ACTIVE':'PRUNED'}</span>
+          </div>
+          <div style="font-size:0.7rem; font-family:'DM Mono'; margin-top:4px;">
+            ${isActive ? `✅ MAX ${maxV} ≥ Threshold ${threshold} → KEEP layer` : `❌ MAX ${maxV} < Threshold ${threshold} → PRUNE entire layer`}
+          </div>
+          <div class="layer-nodes" style="margin-top:8px;">
+            ${layer.slice(0,6).map(s => `<div class="node-box"><span class="node-name">${escapeHtml(s.Nama)}</span><span class="node-total">${s.Total}</span></div>`).join('')}
+            ${layer.length > 6 ? `<div class="node-box">+${layer.length-6} more</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = pruneHtml;
+  }
+
+  function refreshAllVisuals() {
+    const kInput = document.getElementById('kInput');
+    let k = parseInt(kInput.value);
+    if (isNaN(k) || k < 1) k = 1;
+    if (k > currentStudents.length && currentStudents.length) k = currentStudents.length;
+    document.getElementById('kInput').value = k;
+    renderOverview(k);
+    renderLOH(k);
+    renderHeaps(k);
+    renderPyramid(k);
+    renderPruning(k);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // Load CSV from file object and update everything
+  function loadCSVFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const csvText = e.target.result;
+      const students = parseCSVToStudents(csvText);
+      if (students.length === 0) {
+        alert("CSV seems invalid or empty. Ensure columns: NIM,Nama,Nilai_Ujian,Nilai_Project.");
+        document.getElementById('statusText').innerText = "Invalid CSV";
+        document.getElementById('statusLed').style.background = "#e74c3c";
+        return;
+      }
+      currentStudents = students;
+      recomputeData();
+      // update badge
+      document.getElementById('statusText').innerHTML = `✅ Loaded ${currentStudents.length} students`;
+      document.getElementById('statusLed').style.background = "#2ecc71";
+      document.getElementById('fileNameDisplay').innerHTML = ` ${file.name}`;
+      refreshAllVisuals();
+    };
+    reader.onerror = function() {
+      alert("Error reading file");
+    };
+    reader.readAsText(file, "UTF-8");
+  }
+
+  // Set up file input handler
+  const fileInput = document.getElementById('csvUpload');
+  fileInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file) loadCSVFromFile(file);
+  });
+
+  // refresh button
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    if (currentStudents.length) {
+      refreshAllVisuals();
+    } else {
+      alert("No CSV loaded. Please select Student_Database.csv file first.");
+    }
+  });
+
+  // Optional: load default demo from built-in dataset (if no file selected, but user can upload)
+  // We can preload the example CSV data from the static dataset (the original student data embedded)
+  function loadDefaultDemo() {
+    const defaultCSV = `NIM,Nama,Nilai_Ujian,Nilai_Project,Total
+S043,Raka,9,10,19
+S055,Elsa,10,9,19
+S003,Citra,8,10,18
+S020,Tono,8,10,18
+S041,Oscar,8,10,18
+S007,Gina,9,9,18
+S011,Karin,10,8,18
+S033,Galih,10,8,18
+S046,Udin,10,8,18
+S035,Irma,8,10,18
+S008,Hadi,9,8,17
+S023,Wawan,9,8,17
+S006,Fajar,10,7,17
+S019,Salsa,8,9,17
+S027,Arif,9,7,16
+S040,Nina,8,8,16
+S034,Hani,7,9,16
+S060,Haris,8,8,16
+S063,Kayla,8,8,16
+S042,Peni,7,9,16
+S049,Xavi,8,8,16
+S045,Tari,9,6,15
+S036,Jaya,7,8,15
+S039,Miko,7,8,15
+S037,Kiki,9,6,15
+S029,Candra,8,7,15
+S052,Bunga,9,6,15
+S058,Hendra,6,9,15
+S054,Danu,5,10,15
+S017,Qori,5,9,14
+S028,Bela,7,7,14
+S014,Nanda,7,7,14
+S004,Dewi,7,7,14
+S018,Rian,6,8,14
+S030,Dita,7,7,14
+S025,Yoga,9,5,14
+S048,Wati,7,6,13
+S051,Aldo,7,6,13
+S038,Lina,6,7,13
+S031,Eko,7,6,13
+S013,Maya,6,7,13
+S001,Andi,8,5,13
+S012,Lukman,7,6,13
+S016,Putri,6,7,13
+S005,Tika,6,6,12
+S010,Joko,7,5,12
+S022,Vina,7,5,12
+S053,Cici,8,4,12
+S057,Gita,6,6,12
+S032,Fani,3,9,12
+S050,Rani,5,7,12
+S009,Intan,8,4,12
+S015,Oki,5,6,11
+S059,Ghea,6,5,11
+S024,Xena,4,7,11
+S044,Siti,6,5,11
+S047,Vera,4,5,9
+S021,Umar,4,5,9
+S056,Fian,5,4,9
+S062,Jefri,5,4,9
+S002,Budi,6,2,8
+S026,Zara,5,3,8
+S061,Indah,3,3,6`;
+    const students = parseCSVToStudents(defaultCSV);
+    if (students.length) {
+      currentStudents = students;
+      recomputeData();
+      document.getElementById('statusText').innerHTML = `📀 Demo Data (${currentStudents.length} students) — upload CSV to replace`;
+      document.getElementById('statusLed').style.background = "#f39c12";
+      document.getElementById('fileNameDisplay').innerHTML = `📌 Built-in example`;
+      refreshAllVisuals();
+    } else {
+      document.getElementById('statusText').innerText = "Demo error";
+    }
+  }
+
+  // initial demo load so page shows something
+  loadDefaultDemo();
+</script>
+</body>
+</html>

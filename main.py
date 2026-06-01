@@ -2,17 +2,12 @@ import pandas as pd
 import heapq
 
 
-df = pd.read_csv("Student_Database2.csv") #load dataset
+df = pd.read_csv("Student_Database.csv") 
+df["Total"] = df["Nilai_Ujian"] + df["Nilai_Project"] 
+df_max = df.sort_values(by="Total", ascending=False).reset_index(drop=True) 
 
-
-df["Total"] = df["Nilai_Ujian"] + df["Nilai_Project"] #hitung total
-
-
-df_max = df.sort_values(by="Total", ascending=False).reset_index(drop=True) #sort descending (max heap)
-
-
-layers = []          #build LOH layers
-
+#=============================================================
+layers = []          
 layer_size = 1
 index = 0
 
@@ -56,8 +51,7 @@ for _, row in df.iterrows():
 
      heapq.heappush(max_heap, (-row["Total"], row["Nama"]))
  
-
-sorted_desc = []                                      # Pop satu per satu → hasil terurut descending
+sorted_desc = []                                    
 while max_heap:
     neg_total, nama = heapq.heappop(max_heap)
     sorted_desc.append((nama, -neg_total))
@@ -67,10 +61,7 @@ print("-" * 30)
 for i, (nama, total) in enumerate(sorted_desc, 1):
     print(f"{i:<5} {nama:<15} {total}")
 
-
-k = 5                      # TOP-K ATAS
-
-k = 5
+k = 5                     
  
 print(f"\nTOP {k} SISWA TERBAIK\n")
 for i, (nama, total) in enumerate(sorted_desc[:k], 1):
@@ -78,7 +69,7 @@ for i, (nama, total) in enumerate(sorted_desc[:k], 1):
 
 
 print("\n===================================")
-print("MIN HEAP")                                       # MIN HEAP
+print("MIN HEAP")                                       #min heap
 print("===================================")
 
 min_heap = []
@@ -95,13 +86,14 @@ print("-" * 30)
 for i, (nama, total) in enumerate(sorted_asc, 1):
     print(f"{i:<5} {nama:<15} {total}")
 
+k = 5
 
-print(f"\nBOTTOM {k} SISWA\n")                           # TOP-K BAWAH
+print(f"\nBOTTOM {k} SISWA\n")                           
 for i, (nama, total) in enumerate(sorted_asc[:k], 1):
     print(f"{i}. {nama} - {total}")
 
 
-print("\n===================================")           # PRUNING SIMULATION
+print("\n===================================")           
 print("PRUNING SIMULATION")
 print("===================================")
 
@@ -122,7 +114,7 @@ for i, layer in enumerate(layers):
         print(f"Reason : MAX {layer_max} >= Threshold {threshold}")
 
 
-print("\n===================================")           # SIMPLE VISUALIZATION
+print("\n===================================")          
 print("LAYER VISUALIZATION")
 print("===================================")
 
